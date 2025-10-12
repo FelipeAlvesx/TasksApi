@@ -1,6 +1,7 @@
 package br.com.todolist.api.controller;
 
 import br.com.todolist.api.domain.Task.*;
+import br.com.todolist.api.service.TokenService;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
@@ -20,12 +21,12 @@ public class TaskController {
 
         @PostMapping
         @Transactional
-        public ResponseEntity crateTask(@RequestBody @Valid TaskCreateDto taskCreateDto, UriComponentsBuilder uriComponentsBuilder){
+        public ResponseEntity<?> crateTask(@RequestBody @Valid TaskCreateDto taskCreateDto, UriComponentsBuilder uriComponentsBuilder){
             var task = new Task(taskCreateDto);
             taskRepository.save(task);
 
             var uri = uriComponentsBuilder.path("/task/{id}").buildAndExpand(task.getId()).toUri();
-
+            
             return ResponseEntity.created(uri).body(new TaskResponseDto(task));
         }
 
@@ -38,7 +39,7 @@ public class TaskController {
 
         @PutMapping
         @Transactional
-        public ResponseEntity updateTask(@RequestBody TaskUpdateDto taskUpdateDto){
+        public ResponseEntity<?> updateTask(@RequestBody TaskUpdateDto taskUpdateDto){
             var task = taskRepository.getReferenceById(taskUpdateDto.id());
             task.update(taskUpdateDto);
 
@@ -49,10 +50,10 @@ public class TaskController {
 
         @DeleteMapping("/{id}")
         @Transactional
-        public ResponseEntity deleteTask(@PathVariable Long id){
+        public ResponseEntity<?> deleteTask(@PathVariable Long id){
             var task = taskRepository.getReferenceById(id);
-            taskRepository.delete(task);
-
+            taskRepository.delete(task);        
+            
             return ResponseEntity.noContent().build();
         }
 
@@ -69,5 +70,15 @@ public class TaskController {
             var pageResponse = taskRepository.findAllByStatsFalse(pageable).map(TaskResponseDto::new);
 
             return ResponseEntity.ok(pageResponse);
+        }
+
+        @GetMapping("/{id}/concluir")
+        @Transactional
+        public ResponseEntity<?> markAsTrue(@PathVariable Long id){
+            var task = taskRepository.getReferenceById(id);
+
+            task.delete();
+
+            return ResponseEntity.noContent().build();
         }
 }
